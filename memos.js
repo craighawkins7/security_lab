@@ -1,12 +1,15 @@
 //handle memos pages
 var db = require("./database.js");
 
+var xss = require('xss')
 //handle adding a memo
 function addMemos(req, res, next) {
 	var memo = req.body.memo;
+	var sanitizedMemo = xss(memo);
+	console.log("SANITIZED memo: " +sanitizedMemo);
 	var sql = "INSERT INTO Memos(memo) VALUES($1);";
 	//var sql = "INSERT INTO Memos(memo) VALUES ( '" + memo + "' )";
-	db.query(sql, [memo], function(e1, d1) { 
+	db.query(sql, [sanitizedMemo], function(e1, d1) { 
 		addMemos1(req, res, next, e1, d1); 
 	});	
 }
