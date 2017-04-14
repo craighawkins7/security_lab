@@ -1,21 +1,19 @@
 /$# /bin/csh -f
 
-set mysqlargs = "-h localhost -u USERNAME -pPASSWORD"
-set db = DATABASE_NAME
-
+set mysqlargs = "-h localhost -u group10 -pgroup10_pw";
+set db = group10_db;
 
 mysql $mysqlargs << EOF
-DROP DATABASE DATABASE_NAME;
+DROP DATABASE group10_db;
 
-CREATE DATABASE DATABASE_NAME;
-USE DATABASE_NAME;
+CREATE DATABASE group10_db;
+USE group10_db;
 
 DROP TABLE IF EXISTS User;
 DROP TABLE IF EXISTS Allocations;
 DROP TABLE IF EXISTS Profile;
 DROP TABLE IF EXISTS Contributions;
 DROP TABLE IF EXISTS Memos;
-
 
 
 CREATE TABLE User (
@@ -28,8 +26,10 @@ CREATE TABLE User (
    password character(255),
    isAdmin bool DEFAULT FALSE
 );
-CREATE INDEX UserNameIndex ON User ( userName );
 
+ALTER TABLE `User` AUTO_INCREMENT = 4000;
+
+CREATE INDEX UserNameIndex ON User ( userName );
 
 
 CREATE TABLE Allocations (
@@ -40,8 +40,6 @@ CREATE TABLE Allocations (
 
    FOREIGN KEY (userId) REFERENCES User(userId)
 );
-
-
 
 CREATE TABLE Profile (
    userId int PRIMARY KEY,
@@ -54,8 +52,6 @@ CREATE TABLE Profile (
    FOREIGN KEY (userId) REFERENCES User(userId)
 );
 
-
-
 CREATE TABLE Contributions (
    userId int PRIMARY KEY,
    preTax int DEFAULT 2,
@@ -66,25 +62,24 @@ CREATE TABLE Contributions (
 );
 
 
-
 CREATE TABLE Memos (
    memo text,
    memotime timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 
-INSERT INTO User VALUES (1,'admin','Node Goat','Admin',NULL, DEFAULT,'Admin_123', TRUE);
-INSERT INTO User VALUES (2,'user1','John','Doe',NULL,'2030-01-10','User1_123', FALSE);
-INSERT INTO User VALUES (3,'user2','Will','Smith',NULL,'2025-11-30','User2_123', FALSE);
+INSERT INTO User VALUES (4001, 'admin', 'Node Goat', 'Admin', NULL, DEFAULT, '4000Admin_123', TRUE);
+INSERT INTO User VALUES (4002, 'user1', 'John', 'Doe', NULL, '2030-01-10', '4000User1_123', FALSE);
+INSERT INTO User VALUES (4003, 'user2', 'Will', 'Smith', NULL, '2025-11-30', '4000User2_123', FALSE);
 
-INSERT INTO Allocations VALUES (1,20,40,40);
-INSERT INTO Allocations VALUES (2,10,10,80);
-INSERT INTO Allocations VALUES (3,5,5,90);
+INSERT INTO Allocations VALUES (4001, 20, 40, 40);
+INSERT INTO Allocations VALUES (4002, 10, 10, 80);
+INSERT INTO Allocations VALUES (4003, 5, 5, 90);
 
-INSERT INTO Profile(userId) VALUES (1);
-INSERT INTO Profile(userId) VALUES (2);
-INSERT INTO Profile(userId) VALUES (3);
+INSERT INTO Profile(userId) VALUES (4001);
+INSERT INTO Profile(userId) VALUES (4002);
+INSERT INTO Profile(userId) VALUES (4003);
 
-INSERT INTO Contributions(userId) VALUES (1);
-INSERT INTO Contributions(userId) VALUES (2);
-INSERT INTO Contributions(userId) VALUES (3);
+INSERT INTO Contributions(userId) VALUES (4001);
+INSERT INTO Contributions(userId) VALUES (4002);
+INSERT INTO Contributions(userId) VALUES (4003);

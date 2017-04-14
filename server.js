@@ -1,15 +1,5 @@
-/********************************************************************************/
-/*										*/
-/*	Main Server for Security Lab						*/
-/*										*/
-/********************************************************************************/
 
-/********************************************************************************/
-/*										*/
-/*	Imports 								*/
-/*										*/
-/********************************************************************************/
-
+//main server for security lab
 var express = require("express");
 var favicon = require("serve-favicon");
 var bodyParser = require("body-parser");
@@ -31,133 +21,105 @@ var allocations = require("./allocations.js");
 var memos = require("./memos.js");
  
 
+//setup routing using express
+function setup() {
+	var app = express();
 
+	app.disable("x-powered-by");
+	app.use(favicon(__dirname + "/app/assets/favicon.ico"));
 
-/********************************************************************************/
-/*										*/
-/*	Setup routing using express						*/
-/*										*/
-/********************************************************************************/
+	app.use(bodyParser.json());
+	app.use(bodyParser.urlencoded({ extended: false }));
 
-function setup()
-{
-   var app = express();
+	app.use(session({ secret: config.COOKIE_SECRET,
+		saveUninitialized: true,
+		resave: true }));
 
-   app.disable("x-powered-by");
-   app.use(favicon(__dirname + "/app/assets/favicon.ico"));
+	// Register templating engine
+	app.engine(".html", consolidate.swig);
+	app.set("view engine", "html");
+	app.set("views", __dirname + "/app/views");
 
-   app.use(bodyParser.json());
-   app.use(bodyParser.urlencoded({ extended: false }));
+	app.use(express.static(__dirname + "/app/assets"));
+
+	app.use(logger('combined'));
    
-   app.use(session({ secret: config.COOKIE_SECRET,
-		     saveUninitialized: true,
-		     resave: true }));
+	// intialize marked library
+	marked.setOptions({ });
+	app.locals.marked = marked;
 
-   // Register templating engine
-   app.engine(".html", consolidate.swig);
-   app.set("view engine", "html");
-   app.set("views", __dirname + "/app/views");
+	var isAdmin = sessionmanager.isAdminUserMiddleware;
+	app.get("/", sessionmanager.displayWelcomePage);
 
-   app.use(express.static(__dirname + "/app/assets"));
-   
-   app.use(logger('combined'));
-   
-   // intialize marked library
-   marked.setOptions({ });
-   app.locals.marked = marked;
+	app.get("/login", sessionmanager.displayLoginPage);
+	app.post("/login", sessionmanager.handleLoginRequest);
 
-   var isAdmin = sessionmanager.isAdminUserMiddleware;
-   app.get("/", sessionmanager.displayWelcomePage);
+	app.get("/signup", sessionmanager.displaySignupPage);
+	app.post("/signup", sessionmanager.handleSignup);
 
-   app.get("/login", sessionmanager.displayLoginPage);
-   app.post("/login", sessionmanager.handleLoginRequest);
+	// Logout page
+	app.get("/logout", sessionmanager.displayLogoutPage);
 
-   app.get("/signup", sessionmanager.displaySignupPage);
-   app.post("/signup", sessionmanager.handleSignup);
+	// Handle redirect for learning resources link
+	app.get("/tutorial", function(req, res, next) {
+		return res.render("tutorial/a1");
+	});
+	app.get("/tutorial/:page", function(req, res, next) {
+		return res.render("tutorial/" + req.params.page);
+	});
 
-   // Logout page
-   app.get("/logout", sessionmanager.displayLogoutPage);
+	// anything below here requires login
+	app.use(sessionmanager.isLoggedInMiddleware);
 
-   // Handle redirect for learning resources link
-   app.get("/tutorial", function(req, res, next) {
-	      return res.render("tutorial/a1");
-	    });
-   app.get("/tutorial/:page", function(req, res, next) {
-	      return res.render("tutorial/" + req.params.page);
-	    });
+	// The main page of the app
+	app.get("/dashboard", sessionmanager.displayWelcomePage);
 
-   // anything below here requires login
-   app.use(sessionmanager.isLoggedInMiddleware);
+	// Profile page
+	app.get("/profile", profile.displayProfile);
+	app.post("/profile", profile.handleProfileUpdate);
 
-   // The main page of the app
-   app.get("/dashboard", sessionmanager.displayWelcomePage);
+	// Contributions Page
+	app.get("/contributions", contributions.displayContributions);
+	app.post("/contributions", contributions.handleContributionsUpdate);
 
-   // Profile page
-   app.get("/profile", profile.displayProfile);
-   app.post("/profile", profile.handleProfileUpdate);
+	// Benefits Page
+	app.get("/benefits", benefits.displayBenefits);
+	app.post("/benefits", benefits.updateBenefits);
 
-    // Contributions Page
-   app.get("/contributions", contributions.displayContributions);
-   app.post("/contributions", contributions.handleContributionsUpdate);
+	// Allocations Page
+	app.get("/allocations/:userId", allocations.displayAllocations);
 
-   // Benefits Page
-   app.get("/benefits", benefits.displayBenefits);
-   app.post("/benefits", benefits.updateBenefits);
+	// Memos Page
+	app.get("/memos", memos.displayMemos);
+	app.post("/memos", memos.addMemos);
 
-   // Allocations Page
-   app.get("/allocations/:userId", allocations.displayAllocations);
+	// Handle redirect for learning resources link
+	app.get("/learn", function(req, res, next) {
+		return res.redirect(req.query.url);
+	});
 
-   // Memos Page
-   app.get("/memos", memos.displayMemos);
-   app.post("/memos", memos.addMemos);
+	// Error handling middleware
+	app.use(errorHandler);
 
-   // Handle redirect for learning resources link
-   app.get("/learn", function(req, res, next) {
-	      return res.redirect(req.query.url);
-	    });
+	// Template system setup
+	swig.setDefaults({
+	 	autoescape: false
+	});
 
-   // Error handling middleware
-   app.use(errorHandler);
+	var port = config.PORT;
+	var server = app.listen(port);
 
-   // Template system setup
-   swig.setDefaults({
-	 autoescape: false
-    });
-
-   var port = config.PORT;
-   var server = app.listen(port);
-
-   console.log("Listening on " + port);
+	console.log("Listening on " + port);
 }
 
-
-
-
-/********************************************************************************/
-/*										*/
-/*	Handle errors								*/
-/*										*/
-/********************************************************************************/
-
-function errorHandler(err,req,res,next)
-{
+//handle errors
+function errorHandler(err, req, res, next) {
    console.log(err.message);
    console.log(err.stack);
    res.status(500);
    res.render("error-template", { error : err } );
 }
 
-
-
-/********************************************************************************/
-/*										*/
-/*	Main program								*/
-/*										*/
-/********************************************************************************/
-
+//main program
 setup();
 
-
-
-
-/* end of server.js */

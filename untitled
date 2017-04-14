@@ -1,0 +1,20 @@
+    //gets messages from database, sends results to caller as JSON
+    dbSelect : function (conn, room, cb) {
+        var sql = "SELECT * FROM messages WHERE room=$1 ORDER BY messageId ASC;";
+        conn.query(sql, [room], function(err, result) {
+            var myJSON;
+            if (result == undefined) myJSON = {"roomName":room};
+            else myJSON = {"roomName":room, "roomMessages": result.rows};
+            cb(myJSON);
+        });
+    },
+
+    //inserts new message into database
+    dbInsert : function(conn, room, nickname, messageText) {
+        console.log("inside dbInsert method");
+        var sql = "INSERT INTO messages(room, nickname, messageText) VALUES($1, $2, $3);"
+        conn.query(sql, [room, nickname, messageText], function(error, result) {
+            if (error) console.log('insert not successful');
+            else console.log('insert successful');
+        });
+    },
